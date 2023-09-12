@@ -4,7 +4,9 @@ namespace raft_utils {
 int
 gpu_device_manager::random_choose() const {
     srand(time(NULL));
-    return rand() % memory_load_.size();
+    auto ret =  rand() % memory_load_.size();
+    std::cout<<"random choose device: "<<ret<<std::endl;
+    return ret;
 }
 
 int
@@ -19,6 +21,7 @@ gpu_device_manager::choose_with_load(size_t load) {
         }
     }
     memory_load_[idx] += load;
+    std::cout<<"choose with load device: "<<idx<<std::endl;
     return idx;
 }
 

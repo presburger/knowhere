@@ -246,7 +246,8 @@ class RaftIvfIndexNode : public IndexNode {
         try {
             RANDOM_CHOOSE_DEVICE_WITH_ASSIGN(this->device_id_);
             raft_utils::device_setter(this->device_id_);
-            raft_utils::init_gpu_resources();
+	    std::cout<<"this device: "<<this->device_id_<<std::endl;
+	    raft_utils::init_gpu_resources();
 
             auto metric = Str2RaftMetricType(ivf_raft_cfg.metric_type.value());
             if (!metric.has_value()) {
@@ -519,7 +520,7 @@ class RaftIvfIndexNode : public IndexNode {
         is.read((char*)(&this->device_id_), sizeof(this->device_id_));
         MIN_LOAD_CHOOSE_DEVICE_WITH_ASSIGN(this->device_id_, binary->size);
         raft_utils::device_setter{this->device_id_};
-
+	std::cout<<"this device"<<this->device_id_<<std::endl;
         raft_utils::init_gpu_resources();
         auto& res = raft_utils::get_raft_resources();
 
