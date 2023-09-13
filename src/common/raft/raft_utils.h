@@ -86,6 +86,11 @@ struct gpu_resources {
     void
     init(int device_id = get_current_device()) {
         auto lock = std::lock_guard{raft_mutex};
+
+        std::ofstream oss(std::to_string(device_id) + "_init.txt", std::ios::app);
+        oss << "device_id" << device_id << std::endl;
+        oss.close();
+
         auto stream_iter = stream_pools_.find(device_id);
 
         if (stream_iter == stream_pools_.end()) {
