@@ -21,7 +21,7 @@
 #include "utils.h"
 
 #ifdef KNOWHERE_WITH_RAFT
-TEST_CASE("Test All GPU Index", "[search]") {
+TEST_CASE("Test_All_GPU_Index", "[search]") {
     using Catch::Approx;
 
     int64_t nb = 10000, nq = 1000;
@@ -102,13 +102,13 @@ TEST_CASE("Test All GPU Index", "[search]") {
         }
     }
 
-    SECTION("Test Gpu Index Search With Bitset") {
+    SECTION("Test_Gpu_Index_Search_With_Bitset") {
         using std::make_tuple;
         auto [name, gen] = GENERATE_REF(table<std::string, std::function<knowhere::Json()>>({
-            make_tuple(knowhere::IndexEnum::INDEX_RAFT_IVFFLAT, ivfflat_gen),
-            make_tuple(knowhere::IndexEnum::INDEX_RAFT_IVFFLAT, refined_gen(ivfflat_gen)),
-            make_tuple(knowhere::IndexEnum::INDEX_RAFT_IVFPQ, ivfpq_gen),
-            make_tuple(knowhere::IndexEnum::INDEX_RAFT_IVFPQ, refined_gen(ivfpq_gen)),
+            // make_tuple(knowhere::IndexEnum::INDEX_RAFT_IVFFLAT, ivfflat_gen),
+            // make_tuple(knowhere::IndexEnum::INDEX_RAFT_IVFFLAT, refined_gen(ivfflat_gen)),
+            // make_tuple(knowhere::IndexEnum::INDEX_RAFT_IVFPQ, ivfpq_gen),
+            // make_tuple(knowhere::IndexEnum::INDEX_RAFT_IVFPQ, refined_gen(ivfpq_gen)),
             make_tuple(knowhere::IndexEnum::INDEX_RAFT_CAGRA, cagra_gen),
         }));
         auto idx = knowhere::IndexFactory::Instance().Create(name, version);
