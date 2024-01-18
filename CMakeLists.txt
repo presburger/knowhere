@@ -37,7 +37,7 @@ if (WITH_RAFT)
     list(TRANSFORM supported_archs APPEND "-real")
     list(APPEND supported_archs ${latest_arch})
 
-    set(CMAKE_CUDA_ARCHITECTURES ${supported_archs})
+    set(CMAKE_CUDA_ARCHITECTURES 86-real)
   endif()
   include(cmake/libs/librapids.cmake)
   project(knowhere CXX C CUDA)
@@ -59,6 +59,7 @@ knowhere_option(WITH_FAISS_TESTS "Build with Faiss unit tests" OFF)
 # clang on ubuntu:22.04 seems to be unaffected.
 # gcc seems to be unaffected.
 add_definitions(-DFMT_HEADER_ONLY)
+add_definitions(-DMTR_ENABLED)
 
 # this is needed for clang on ubuntu:20.04, otherwise
 #   the linked fails with 'undefined reference' error.
@@ -120,7 +121,7 @@ if(WITH_COVERAGE)
 endif()
 
 knowhere_file_glob(GLOB_RECURSE KNOWHERE_SRCS src/common/*.cc src/index/*.cc
-                   src/io/*.cc src/common/*.cu src/index/*.cu src/io/*.cu)
+                   src/io/*.cc src/common/*.cu src/index/*.cu src/io/*.cu src/io/minitrace.c)
 
 set(KNOWHERE_LINKER_LIBS "")
 

@@ -38,7 +38,7 @@
 #include "knowhere/factory.h"
 #include "knowhere/log.h"
 #include "knowhere/utils.h"
-
+#include "minitrace.h"
 namespace knowhere {
 
 auto static constexpr cuda_concurrent_size = std::uint32_t{32};
@@ -76,6 +76,8 @@ struct GpuRaftIndexNode : public IndexNode {
 
     Status
     Train(const DataSet& dataset, const Config& cfg) override {
+        MTR_SCOPE("TRAIN", "X");
+
         auto result = Status::success;
         auto raft_cfg = raft_knowhere::raft_knowhere_config{};
         try {
@@ -109,6 +111,8 @@ struct GpuRaftIndexNode : public IndexNode {
 
     expected<DataSetPtr>
     Search(const DataSet& dataset, const Config& cfg, const BitsetView& bitset) const override {
+        MTR_SCOPE("SEARCH", "X");
+        LOG_KNOWHERE_INFO_ << "SEARCH ROWS" << dataset.GetRows() << std::endl;
         auto result = Status::success;
         auto raft_cfg = raft_knowhere::raft_knowhere_config{};
         auto err_msg = std::string{};
@@ -159,6 +163,7 @@ struct GpuRaftIndexNode : public IndexNode {
 
     Status
     Serialize(BinarySet& binset) const override {
+        MTR_SCOPE("SERI", "X");
         auto result = Status::success;
         std::stringbuf buf;
         if (!index_.is_trained()) {
@@ -185,6 +190,7 @@ struct GpuRaftIndexNode : public IndexNode {
 
     Status
     Deserialize(const BinarySet& binset, const Config& config) override {
+        MTR_SCOPE("DESE", "X");
         auto result = Status::success;
         std::stringbuf buf;
         auto binary = binset.GetByName(this->Type());

@@ -26,8 +26,8 @@
 #ifdef KNOWHERE_WITH_RAFT
 #include "common/raft/integration/raft_initialization.hpp"
 #endif
+#include "minitrace.h"
 #include "simd/hook.h"
-
 namespace knowhere {
 
 void
@@ -175,6 +175,16 @@ KnowhereConfig::SetRaftMemPool(size_t init_size, size_t max_size) {
 
 void
 KnowhereConfig::SetRaftMemPool() {
+    mtr_init("trace.json");
+
+    std::thread t1([]() {
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::seconds(30));
+            mtr_flush();
+        }
+    });
+    t1.detach();
+
     // Overload for default values
 #ifdef KNOWHERE_WITH_RAFT
     auto config = raft_knowhere::raft_configuration{};
