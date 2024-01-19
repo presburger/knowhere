@@ -516,7 +516,7 @@ struct raft_knowhere_index<IndexKind>::impl {
                                 ? std::make_optional(device_dataset_storage->view())
                                 : std::optional<raft::device_matrix_view<const data_type, input_indexing_type>>{};
 
-        if (device_bitset) {
+        if (!device_bitset) {
             LOG_KNOWHERE_INFO_ << "BITSET YES" << std::endl;
             raft_index_type::search(
                 res, *index_, search_params, raft::make_const_mdspan(device_data_storage.view()), device_ids,
