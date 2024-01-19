@@ -36,6 +36,7 @@
 #include "common/raft/integration/raft_knowhere_index.hpp"
 #include "common/raft/proto/raft_index.cuh"
 #include "common/raft/proto/raft_index_kind.hpp"
+#include "knowhere/log.h"
 
 namespace raft_knowhere {
 namespace detail {
@@ -516,12 +517,14 @@ struct raft_knowhere_index<IndexKind>::impl {
                                 : std::optional<raft::device_matrix_view<const data_type, input_indexing_type>>{};
 
         if (device_bitset) {
+            LOG_KNOWHERE_INFO_ << "BITSET YES" << std::endl;
             raft_index_type::search(
                 res, *index_, search_params, raft::make_const_mdspan(device_data_storage.view()), device_ids,
                 device_distances, config.refine_ratio, input_indexing_type{}, dataset_view,
                 raft::neighbors::filtering::bitset_filter<knowhere_bitset_data_type, knowhere_bitset_indexing_type>{
                     device_bitset->view()});
         } else {
+            LOG_KNOWHERE_INFO_ << "BITSET NO" << std::endl;
             raft_index_type::search(res, *index_, search_params, raft::make_const_mdspan(device_data_storage.view()),
                                     device_ids, device_distances, config.refine_ratio, input_indexing_type{},
                                     dataset_view);
