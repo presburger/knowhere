@@ -21,18 +21,28 @@
 #include "gpu_raft.h"
 #include "knowhere/factory.h"
 #include "knowhere/index_node_thread_pool_wrapper.h"
+#include "raft/util/cuda_rt_essentials.hpp"
 
 namespace knowhere {
 template struct GpuRaftIndexNode<raft_proto::raft_index_kind::ivf_pq>;
 
 KNOWHERE_REGISTER_GLOBAL(GPU_RAFT_IVF_PQ, [](const int32_t& version, const Object& object) {
     return Index<IndexNodeThreadPoolWrapper>::Create(std::make_unique<GpuRaftIvfPqIndexNode>(version, object),
-                                                     cuda_concurrent_size);
+                                                     []() {
+                                                         int count;
+                                                         RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+                                                         return count * 8;
+                                                     }()
+
+    );
 });
 
 KNOWHERE_REGISTER_GLOBAL(GPU_IVF_PQ, [](const int32_t& version, const Object& object) {
-    return Index<IndexNodeThreadPoolWrapper>::Create(std::make_unique<GpuRaftIvfPqIndexNode>(version, object),
-                                                     cuda_concurrent_size);
+    return Index<IndexNodeThreadPoolWrapper>::Create(std::make_unique<GpuRaftIvfPqIndexNode>(version, object), []() {
+        int count;
+        RAFT_CUDA_TRY(cudaGetDeviceCount(&count));
+        return count * 8;
+    }());
 });
 
 }  // namespace knowhere
