@@ -37,7 +37,7 @@ if (WITH_RAFT)
     list(TRANSFORM supported_archs APPEND "-real")
     list(APPEND supported_archs ${latest_arch})
 
-    set(CMAKE_CUDA_ARCHITECTURES ${supported_archs})
+    set(CMAKE_CUDA_ARCHITECTURES 86-real)
   endif()
   include(cmake/libs/librapids.cmake)
   project(knowhere CXX C CUDA)
