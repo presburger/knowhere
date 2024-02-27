@@ -124,8 +124,7 @@ struct GpuRaftIndexNode : public IndexNode {
                 auto rows = dataset.GetRows();
                 auto dim = dataset.GetDim();
                 auto const* data = reinterpret_cast<float const*>(dataset.GetTensor());
-                auto search_result =
-                    index_.search(raft_cfg, data, rows, dim, bitset.data(), bitset.byte_size(), bitset.size());
+                auto search_result = index_.search(raft_cfg, data, rows, dim, nullptr, 0, 0);
                 std::this_thread::yield();
                 index_.synchronize();
                 return GenResultDataSet(rows, raft_cfg.k, std::get<0>(search_result), std::get<1>(search_result));
