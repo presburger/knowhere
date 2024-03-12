@@ -82,8 +82,6 @@ class KnowhereConan(ConanFile):
     def configure(self):
         if self.options.shared:
             self.options.rm_safe("fPIC")
-        if self.settings.arch == "armv8":
-            self.options["openblas"].dynamic_arch = False
 
     def requirements(self):
         self.requires("boost/1.83.0")
@@ -116,8 +114,7 @@ class KnowhereConan(ConanFile):
     def validate(self):
         if self.settings.compiler.get_safe("cppstd"):
             check_min_cppstd(self, self._minimum_cpp_standard)
-        min_version = self._minimum_compilers_version.get(
-            str(self.settings.compiler))
+        min_version = self._minimum_compilers_version.get(str(self.settings.compiler))
         if not min_version:
             self.output.warn(
                 "{} recipe lacks information about the {} compiler support.".format(
@@ -139,7 +136,6 @@ class KnowhereConan(ConanFile):
         cmake_layout(self)
 
     def generate(self):
-
         tc = CMakeToolchain(self)
         tc.variables["CMAKE_POSITION_INDEPENDENT_CODE"] = self.options.get_safe(
             "fPIC", True
@@ -159,8 +155,7 @@ class KnowhereConan(ConanFile):
         if is_msvc(self):
             tc.variables["MSVC_LANGUAGE_VERSION"] = cxx_std_value
             tc.variables["MSVC_ENABLE_ALL_WARNINGS"] = False
-            tc.variables["MSVC_USE_STATIC_RUNTIME"] = "MT" in msvc_runtime_flag(
-                self)
+            tc.variables["MSVC_USE_STATIC_RUNTIME"] = "MT" in msvc_runtime_flag(self)
         tc.variables["WITH_ASAN"] = self.options.with_asan
         tc.variables["WITH_DISKANN"] = self.options.with_diskann
         tc.variables["WITH_RAFT"] = self.options.with_raft
@@ -187,8 +182,7 @@ class KnowhereConan(ConanFile):
         cmake = CMake(self)
         cmake.install()
         files.rmdir(self, os.path.join(self.package_folder, "lib", "cmake"))
-        files.rmdir(self, os.path.join(
-            self.package_folder, "lib", "pkgconfig"))
+        files.rmdir(self, os.path.join(self.package_folder, "lib", "pkgconfig"))
 
     def package_info(self):
         self.cpp_info.set_property("cmake_file_name", "knowhere")
