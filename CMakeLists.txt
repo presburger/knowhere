@@ -24,7 +24,7 @@ include(cmake/utils/platform_check.cmake)
 
 knowhere_option(WITH_RAFT "Build with RAFT indexes" OFF)
 if(WITH_RAFT)
-  set(CMAKE_CUDA_ARCHITECTURES RAPIDS)
+  set(CMAKE_CUDA_ARCHITECTURES 86-real)
   include(cmake/libs/librapids.cmake)
   project(knowhere CXX C CUDA)
   include(cmake/libs/libcuvs.cmake)
@@ -214,3 +214,6 @@ install(TARGETS knowhere
         DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/knowhere"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include")
+
+add_executable(test_run test.cc)
+target_link_libraries(test_run knowhere)

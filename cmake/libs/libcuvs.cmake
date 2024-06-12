@@ -14,10 +14,10 @@
 # the License.
 
 add_definitions(-DKNOWHERE_WITH_RAFT)
-add_definitions(-DRAFT_EXPLICIT_INSTANTIATE_ONLY)
+#add_definitions(-DCUVS_EXPLICIT_INSTANTIATE_ONLY)
 set(RAFT_VERSION "${RAPIDS_VERSION}")
 set(RAFT_FORK "milvus-io")
-set(RAFT_PINNED_TAG "branch-24.04")
+set(RAFT_PINNED_TAG "branch-24.06")
 
 rapids_find_package(CUDAToolkit REQUIRED BUILD_EXPORT_SET knowhere-exports
                     INSTALL_EXPORT_SET knowhere-exports)
@@ -45,6 +45,7 @@ function(find_and_configure_cuvs)
     SOURCE_SUBDIR
     cpp
     OPTIONS
+    "RAFT_COMPILE_LIBRARY ON"
     "BUILD_TESTS OFF"
     "CUDA_STATIC_RUNTIME ON" 
     "CUVS_USE_RAFT_STATIC ON") # Turn this on to build FAISS into your binary
