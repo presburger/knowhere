@@ -216,3 +216,9 @@ install(TARGETS knowhere
         DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/knowhere"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/include")
+
+
+add_executable(test test.cc)
+target_link_libraries(test knowhere)
+add_dependencies(test knowhere)
+

@@ -16,9 +16,10 @@
 #include "knowhere/config.h"
 #include "knowhere/dataset.h"
 #include "knowhere/expected.h"
+#include "knowhere/index/handle.h"
 #include "knowhere/index/index_node.h"
-
 namespace knowhere {
+
 template <typename T1>
 class Index {
  public:
@@ -140,6 +141,9 @@ class Index {
 
     Status
     Build(const DataSetPtr dataset, const Json& json);
+
+    const std::unique_ptr<Handle>
+    BuildAsync(const DataSetPtr dataset, const Json& json, const std::chrono::seconds& timeout);
 
     Status
     Train(const DataSetPtr dataset, const Json& json);

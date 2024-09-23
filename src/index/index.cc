@@ -12,6 +12,8 @@
 #include "knowhere/index/index.h"
 
 #include "fmt/format.h"
+#include "folly/futures/Future.h"
+#include "knowhere/comp/thread_pool.h"
 #include "knowhere/comp/time_recorder.h"
 #include "knowhere/dataset.h"
 #include "knowhere/expected.h"
@@ -32,6 +34,26 @@ LoadConfig(BaseConfig* cfg, const Json& json, knowhere::PARAM_TYPE param_type, c
     LOG_KNOWHERE_DEBUG_ << method << " config dump: " << json_.dump();
     RETURN_IF_ERROR(res);
     return Config::Load(*cfg, json_, param_type, msg);
+}
+
+template <typename T>
+inline const std::unique_ptr<Handle>
+Index<T>::BuildAsync(const DataSetPtr dataset, const Json& json, const std::chrono::seconds& timeout) {
+    auto pool = ThreadPool::GetGlobalBuildThreadPool();
+    auto handle = std::make_unique<Handle>(timeout);
+    handle->Set(pool->push([this, &dataset, &json, &handle]() {
+        for (int i = 0; i < 1000; i++) {
+            if (handle->Flag())
+                return knowhere::Status::timeout;
+            if (handle->IsTimeout())
+                return knowhere::Status::timeout;
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::cout << "sleep" << " " << i << std::endl;
+        }
+
+        return this->Build(dataset, json);
+    }));
+    return handle;
 }
 
 template <typename T>
