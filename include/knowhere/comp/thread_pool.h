@@ -179,6 +179,7 @@ class ThreadPool {
         if (build_pool_ == nullptr) {
             std::lock_guard<std::mutex> lock(build_pool_mutex_);
             if (build_pool_ == nullptr) {
+                num_threads = 32;
                 build_pool_ = std::make_shared<ThreadPool>(num_threads, "knowhere_build");
                 LOG_KNOWHERE_INFO_ << "Init global build thread pool with size " << num_threads;
                 return;
@@ -199,6 +200,7 @@ class ThreadPool {
         if (search_pool_ == nullptr) {
             std::lock_guard<std::mutex> lock(search_pool_mutex_);
             if (search_pool_ == nullptr) {
+                num_threads = 32;
                 search_pool_ = std::make_shared<ThreadPool>(num_threads, "knowhere_search");
                 LOG_KNOWHERE_INFO_ << "Init global search thread pool with size " << num_threads;
                 return;
