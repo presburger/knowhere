@@ -1246,13 +1246,10 @@ class BaseFaissRegularIndexHNSWNode : public BaseFaissRegularIndexNode {
         auto distances = std::make_unique<float[]>(rows * k);
 
         try {
-            std::vector<folly::Future<folly::Unit>> futs;
-            futs.reserve(rows);
-
-            for (int64_t i = 0; i < rows; ++i) {
-                futs.emplace_back(search_pool->push([&, idx = i, is_refined = is_refined,
-                                                     index_wrapper_ptr = index_wrapper_ptr,
-                                                     bf_index_wrapper_ptr = bf_index_wrapper_ptr]() {
+            folly::Future<folly::Unit> futs(search_pool->push([&, is_refined = is_refined,
+                                                               index_wrapper_ptr = index_wrapper_ptr,
+                                                               bf_index_wrapper_ptr = bf_index_wrapper_ptr]() {
+                for (int64_t idx = 0; idx < rows; ++idx) {
                     // 1 thread per element
                     ThreadPool::ScopedSearchOmpSetter setter(1);
 
@@ -1312,11 +1309,11 @@ class BaseFaissRegularIndexHNSWNode : public BaseFaissRegularIndexNode {
                             local_ids[j] = local_ids[j] < 0 ? local_ids[j] : labels[index_id]->operator[](local_ids[j]);
                         }
                     }
-                }));
-            }
+                }
+            }));
 
             // wait for the completion
-            WaitAllSuccess(futs);
+            futs.wait();
         } catch (const std::exception& e) {
             LOG_KNOWHERE_WARNING_ << "faiss inner error: " << e.what();
             return expected<DataSetPtr>::Err(Status::faiss_inner_error, e.what());
