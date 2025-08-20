@@ -1246,27 +1246,34 @@ class BaseFaissRegularIndexHNSWNode : public BaseFaissRegularIndexNode {
         auto distances = std::make_unique<float[]>(rows * k);
 
         try {
-            folly::Future<folly::Unit> futs(search_pool->push([&, is_refined = is_refined,
-                                                               index_wrapper_ptr = index_wrapper_ptr,
-                                                               bf_index_wrapper_ptr = bf_index_wrapper_ptr]() {
+            // 1 thread per element
+            ThreadPool::ScopedSearchOmpSetter setter(1);
+
+            // set up a query
+            const float* cur_query = nullptr;
+
+            std::vector<float> cur_query_tmp(dim * rows);
+            if (data_format == DataFormatEnum::fp32) {
+                cur_query = (const float*)data;
+            } else {
+                convert_rows_to_fp32(data, cur_query_tmp.data(), data_format, size_t(0), rows, dim);
+                cur_query = cur_query_tmp.data();
+            }
+
+            // perform the search
+            if (is_refined) {
+                faiss::IndexRefineSearchParameters refine_params;
+                refine_params.k_factor = hnsw_cfg.refine_k.value_or(1);
+                // a refine procedure itself does not need to care about filtering
+                refine_params.sel = nullptr;
+                refine_params.base_index_params = &hnsw_search_params;
+
+                // index_wrapper_ptr->search(rows, cur_query, k, distances.get(), ids.get(), &refine_params);
                 for (int64_t idx = 0; idx < rows; ++idx) {
-                    // 1 thread per element
-                    ThreadPool::ScopedSearchOmpSetter setter(1);
-
-                    // set up a query
-                    const float* cur_query = nullptr;
-
-                    std::vector<float> cur_query_tmp(dim);
-                    if (data_format == DataFormatEnum::fp32) {
-                        cur_query = (const float*)data + idx * dim;
-                    } else {
-                        convert_rows_to_fp32(data, cur_query_tmp.data(), data_format, idx, 1, dim);
-                        cur_query = cur_query_tmp.data();
-                    }
-
                     // set up local results
                     faiss::idx_t* const __restrict local_ids = ids.get() + k * idx;
                     float* const __restrict local_distances = distances.get() + k * idx;
+                    index_wrapper_ptr->search(1, cur_query + idx * dim, k, local_distances, local_ids, &refine_params);
 
                     // check if we need to perform a brute-force search bcz of the lack of results
                     auto bf_search_needed = [&]() -> bool {
@@ -1284,36 +1291,54 @@ class BaseFaissRegularIndexHNSWNode : public BaseFaissRegularIndexNode {
                         return false;
                     };
 
-                    // perform the search
-                    if (is_refined) {
-                        faiss::IndexRefineSearchParameters refine_params;
-                        refine_params.k_factor = hnsw_cfg.refine_k.value_or(1);
-                        // a refine procedure itself does not need to care about filtering
-                        refine_params.sel = nullptr;
-                        refine_params.base_index_params = &hnsw_search_params;
-
-                        index_wrapper_ptr->search(1, cur_query, k, local_distances, local_ids, &refine_params);
-                        if (bf_search_needed()) {
-                            bf_index_wrapper_ptr->search(1, cur_query, k, local_distances, local_ids, &refine_params);
-                        }
-                    } else {
-                        index_wrapper_ptr->search(1, cur_query, k, local_distances, local_ids, &hnsw_search_params);
-                        if (bf_search_needed()) {
-                            bf_index_wrapper_ptr->search(1, cur_query, k, local_distances, local_ids,
-                                                         &hnsw_search_params);
-                        }
-                    }
-
-                    if (!labels.empty()) {
-                        for (auto j = 0; j < k; ++j) {
-                            local_ids[j] = local_ids[j] < 0 ? local_ids[j] : labels[index_id]->operator[](local_ids[j]);
-                        }
+                    if (bf_search_needed()) {
+                        bf_index_wrapper_ptr->search(1, cur_query + idx * dim, k, local_distances, local_ids,
+                                                     &refine_params);
                     }
                 }
-            }));
 
-            // wait for the completion
-            futs.wait();
+            } else {
+                // index_wrapper_ptr->search(rows, cur_query, k, distances.get(), ids.get(), &hnsw_search_params);
+
+                for (int64_t idx = 0; idx < rows; ++idx) {
+                    // set up local results
+                    faiss::idx_t* const __restrict local_ids = ids.get() + k * idx;
+                    float* const __restrict local_distances = distances.get() + k * idx;
+                    index_wrapper_ptr->search(1, cur_query + idx * dim, k, local_distances, local_ids,
+                                              &hnsw_search_params);
+
+                    // check if we need to perform a brute-force search bcz of the lack of results
+                    auto bf_search_needed = [&]() -> bool {
+                        size_t real_topk = 0;
+                        for (auto j = 0; j < k; ++j) {
+                            if (local_ids[j] < 0) {
+                                continue;
+                            }
+                            real_topk++;
+                        }
+                        if (real_topk < k && real_topk < bitset.size() - bitset.count() &&
+                            bf_index_wrapper_ptr != nullptr) {
+                            return true;
+                        }
+                        return false;
+                    };
+                    if (bf_search_needed()) {
+                        bf_index_wrapper_ptr->search(1, cur_query + idx * dim, k, local_distances, local_ids,
+                                                     &hnsw_search_params);
+                    }
+                }
+            }
+
+            if (!labels.empty()) {
+                for (int64_t idx = 0; idx < rows; ++idx) {
+                    faiss::idx_t* const __restrict local_ids = ids.get() + k * idx;
+                    float* const __restrict local_distances = distances.get() + k * idx;
+
+                    for (auto j = 0; j < k; ++j) {
+                        local_ids[j] = local_ids[j] < 0 ? local_ids[j] : labels[index_id]->operator[](local_ids[j]);
+                    }
+                }
+            }
         } catch (const std::exception& e) {
             LOG_KNOWHERE_WARNING_ << "faiss inner error: " << e.what();
             return expected<DataSetPtr>::Err(Status::faiss_inner_error, e.what());
